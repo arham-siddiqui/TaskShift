@@ -95,3 +95,32 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py
 ```
+
+## Extract activations
+
+Activation extraction runs the dataset through a trained checkpoint and saves
+the internal tensors needed by probes and representation-shift metrics.
+
+```bash
+python3 -m activations.extract --dataset artifacts/prototype_dataset --checkpoint-dir artifacts/checkpoints
+```
+
+Outputs:
+
+- `artifacts/activations/passive_activations.pt`
+- `artifacts/activations/navigation_activations.pt`
+
+Each activation artifact contains:
+
+- `activations["backbone_features"]`: frozen visual features
+- `activations["head_hidden"]`: hidden representation inside the task head
+- `logits`: model outputs
+- `targets`: passive, navigation, and concept labels
+- `metadata`: original frame metadata
+- `vocab`: column names for target tensors
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py
+```
