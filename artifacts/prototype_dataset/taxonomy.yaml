@@ -1,0 +1,44 @@
+objects:
+  - door
+  - chair
+  - table
+  - sofa
+  - cabinet
+  - bed
+  - sink
+  - fridge
+  - wall
+  - floor
+
+rooms:
+  - Kitchen
+  - LivingRoom
+  - Bedroom
+  - Bathroom
+
+scene_layout:
+  - wall
+  - floor
+  - room_corner
+  - hallway
+  - doorway
+
+navigation:
+  - path
+  - obstacle
+  - blocked_path
+  - reachable_area
+  - goal_visible
+
+affordance:
+  - openable
+  - pickupable
+  - container
+  - support_surface
+  - movable
+
+agency:
+  - person
+  - moving_object
+  - static_object
+
