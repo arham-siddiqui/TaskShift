@@ -124,3 +124,28 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py
 ```
+
+## Train concept probes
+
+Concept probes are simple linear classifiers trained after the task heads. They
+ask whether a concept such as `path`, `obstacle`, or `goal_object` is linearly
+decodable from a saved activation.
+
+```bash
+python3 -m analysis.linear_probes --activation-dir artifacts/activations --output-dir artifacts/probes
+```
+
+Outputs:
+
+- `artifacts/probes/passive_concept_probes.pt`
+- `artifacts/probes/navigation_concept_probes.pt`
+
+Each probe artifact contains one weight vector per trained concept and
+activation source. Concepts with too few positives, such as `agent` in the
+prototype dataset, are skipped automatically.
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py
+```
