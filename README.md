@@ -63,3 +63,34 @@ Run the data tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py
 ```
+
+## Train passive and navigation heads
+
+In this project, a **head** is the small task-specific neural network attached
+to a shared visual backbone. The backbone converts an image into features; the
+head converts those features into labels for one task.
+
+For the current prototype, the backbone is a frozen PyTorch-only image
+featurizer so the training pipeline can run locally without downloading DINOv2.
+Later, this backbone can be replaced with DINOv2 while keeping the passive and
+navigation head structure.
+
+Train both heads:
+
+```bash
+python3 -m models.train_heads --dataset artifacts/prototype_dataset --epochs 20
+```
+
+Outputs:
+
+- `artifacts/checkpoints/passive_head.pt`
+- `artifacts/checkpoints/navigation_head.pt`
+
+The passive head predicts visible objects and room type. The navigation head
+predicts door/path/obstacle/reachability labels and best action.
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py
+```

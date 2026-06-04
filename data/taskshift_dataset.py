@@ -175,3 +175,27 @@ def pil_to_tensor(image: Image.Image) -> torch.Tensor:
     data = torch.frombuffer(bytearray(image.tobytes()), dtype=torch.uint8)
     data = data.view(height, width, 3)
     return data.permute(2, 0, 1).to(dtype=torch.float32).div(255.0)
+
+
+def taskshift_collate(batch: list[dict[str, Any]]) -> dict[str, Any]:
+    """Batch samples while keeping variable-length metadata as a list."""
+
+    return {
+        "image": torch.stack([sample["image"] for sample in batch]),
+        "passive_targets": {
+            "objects": torch.stack(
+                [sample["passive_targets"]["objects"] for sample in batch]
+            ),
+            "room": torch.stack([sample["passive_targets"]["room"] for sample in batch]),
+        },
+        "navigation_targets": {
+            "binary": torch.stack(
+                [sample["navigation_targets"]["binary"] for sample in batch]
+            ),
+            "action": torch.stack(
+                [sample["navigation_targets"]["action"] for sample in batch]
+            ),
+        },
+        "concept_targets": torch.stack([sample["concept_targets"] for sample in batch]),
+        "metadata": [sample["metadata"] for sample in batch],
+    }
