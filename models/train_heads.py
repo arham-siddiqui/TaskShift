@@ -19,7 +19,9 @@ from data.taskshift_dataset import (
     taskshift_collate,
 )
 from models.backbone import build_backbone
+from models.backbone import configure_backbone_training
 from models.backbone import image_transform_for_backbone
+from models.backbone import trainable_state_dict
 from models.heads import NavigationHead, PassiveHead
 
 
@@ -39,6 +41,8 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--backbone-lr", type=float, default=1e-5)
+    parser.add_argument("--train-backbone", choices=("none", "final_block"), default="none")
     parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args()
 
@@ -50,6 +54,8 @@ def main() -> None:
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
+        backbone_lr=args.backbone_lr,
+        train_backbone=args.train_backbone,
         seed=args.seed,
     )
 
@@ -62,6 +68,8 @@ def train_requested_heads(
     epochs: int = 20,
     batch_size: int = 32,
     lr: float = 1e-3,
+    backbone_lr: float = 1e-5,
+    train_backbone: str = "none",
     seed: int = 17,
 ) -> dict[str, dict[str, float]]:
     set_seed(seed)
@@ -73,12 +81,24 @@ def train_requested_heads(
         image_transform=image_transform_for_backbone(backbone_name),
     )
     train_loader, val_loader = build_loaders(dataset, batch_size, seed)
-    backbone = build_backbone(backbone_name).to(device)
 
     results: dict[str, dict[str, float]] = {}
     if task in ("passive", "both"):
+        backbone = build_backbone(backbone_name).to(device)
+        trainable_prefixes = configure_backbone_training(backbone, train_backbone)
         head = PassiveHead(backbone.feature_dim, len(OBJECT_VOCAB), len(ROOM_VOCAB)).to(device)
-        metrics = train_one_head("passive", backbone, head, train_loader, val_loader, device, epochs, lr)
+        metrics = train_one_head(
+            "passive",
+            backbone,
+            head,
+            train_loader,
+            val_loader,
+            device,
+            epochs,
+            lr,
+            backbone_lr,
+            train_backbone != "none",
+        )
         save_checkpoint(
             output_dir / "passive_head.pt",
             "passive",
@@ -86,18 +106,31 @@ def train_requested_heads(
             head,
             metrics,
             backbone_name,
+            train_backbone,
+            trainable_prefixes,
             dataset.vocab.navigation_actions,
         )
         results["passive"] = metrics
 
     if task in ("navigation", "both"):
+        backbone = build_backbone(backbone_name).to(device)
+        trainable_prefixes = configure_backbone_training(backbone, train_backbone)
         head = NavigationHead(
             backbone.feature_dim,
             len(NAVIGATION_BINARY_KEYS),
             len(dataset.vocab.navigation_actions),
         ).to(device)
         metrics = train_one_head(
-            "navigation", backbone, head, train_loader, val_loader, device, epochs, lr
+            "navigation",
+            backbone,
+            head,
+            train_loader,
+            val_loader,
+            device,
+            epochs,
+            lr,
+            backbone_lr,
+            train_backbone != "none",
         )
         save_checkpoint(
             output_dir / "navigation_head.pt",
@@ -106,6 +139,8 @@ def train_requested_heads(
             head,
             metrics,
             backbone_name,
+            train_backbone,
+            trainable_prefixes,
             dataset.vocab.navigation_actions,
         )
         results["navigation"] = metrics
@@ -147,12 +182,19 @@ def train_one_head(
     device: torch.device,
     epochs: int,
     lr: float,
+    backbone_lr: float,
+    train_backbone: bool,
 ) -> dict[str, float]:
-    optimizer = torch.optim.AdamW(head.parameters(), lr=lr)
+    parameter_groups: list[dict[str, Any]] = [{"params": head.parameters(), "lr": lr}]
+    if train_backbone:
+        backbone_parameters = [parameter for parameter in backbone.parameters() if parameter.requires_grad]
+        if backbone_parameters:
+            parameter_groups.append({"params": backbone_parameters, "lr": backbone_lr})
+    optimizer = torch.optim.AdamW(parameter_groups)
 
     for epoch in range(1, epochs + 1):
-        train_metrics = run_epoch(task, backbone, head, train_loader, device, optimizer)
-        val_metrics = run_epoch(task, backbone, head, val_loader, device)
+        train_metrics = run_epoch(task, backbone, head, train_loader, device, optimizer, train_backbone)
+        val_metrics = run_epoch(task, backbone, head, val_loader, device, None, train_backbone)
         print(
             f"{task} epoch {epoch:03d} "
             f"train_loss={train_metrics['loss']:.4f} "
@@ -160,7 +202,7 @@ def train_one_head(
             f"{format_metric_summary(task, val_metrics)}"
         )
 
-    return run_epoch(task, backbone, head, val_loader, device)
+    return run_epoch(task, backbone, head, val_loader, device, None, train_backbone)
 
 
 def run_epoch(
@@ -170,17 +212,18 @@ def run_epoch(
     loader: DataLoader,
     device: torch.device,
     optimizer: torch.optim.Optimizer | None = None,
+    train_backbone: bool = False,
 ) -> dict[str, float]:
     training = optimizer is not None
     head.train(training)
-    backbone.eval()
+    backbone.train(training and train_backbone)
 
     totals: dict[str, float] = {"loss": 0.0}
     examples = 0
 
     for batch in loader:
         images = batch["image"].to(device)
-        with torch.no_grad():
+        with torch.set_grad_enabled(training and train_backbone):
             features = backbone(images)
 
         if task == "passive":
@@ -263,6 +306,8 @@ def save_checkpoint(
     head: nn.Module,
     metrics: dict[str, float],
     backbone_name: str,
+    train_backbone: str,
+    trainable_prefixes: tuple[str, ...],
     navigation_actions: tuple[str, ...],
 ) -> None:
     checkpoint: dict[str, Any] = {
@@ -271,7 +316,10 @@ def save_checkpoint(
             "name": getattr(getattr(backbone, "spec", None), "name", "unknown"),
             "build_name": backbone_name,
             "feature_dim": getattr(backbone, "feature_dim", None),
+            "train_mode": train_backbone,
+            "trainable_prefixes": trainable_prefixes,
         },
+        "backbone_state_dict": trainable_state_dict(backbone) if train_backbone != "none" else {},
         "head_state_dict": head.state_dict(),
         "metrics": metrics,
         "vocab": {

@@ -5,7 +5,7 @@ from PIL import Image
 
 from data.taskshift_dataset import NAVIGATION_BINARY_KEYS, OBJECT_VOCAB, ROOM_VOCAB
 from activations.extract import resolve_backbone_name
-from models.backbone import build_backbone, image_transform_for_backbone
+from models.backbone import build_backbone, configure_backbone_training, image_transform_for_backbone
 from models.heads import NavigationHead, PassiveHead
 
 
@@ -40,6 +40,12 @@ class ModelComponentTest(unittest.TestCase):
         checkpoint = {"backbone": {"name": "frozen_prototype_grid8"}}
 
         self.assertEqual(resolve_backbone_name(checkpoint), "prototype")
+
+    def test_final_block_training_requires_dinov2(self) -> None:
+        backbone = build_backbone("prototype")
+
+        with self.assertRaises(ValueError):
+            configure_backbone_training(backbone, "final_block")
 
 
 if __name__ == "__main__":

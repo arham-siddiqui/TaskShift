@@ -134,6 +134,62 @@ def build_backbone(name: str = "prototype") -> nn.Module:
     return backbone
 
 
+def configure_backbone_training(backbone: nn.Module, mode: str) -> tuple[str, ...]:
+    """Configure which backbone parameters are trainable."""
+
+    for parameter in backbone.parameters():
+        parameter.requires_grad = False
+
+    if mode == "none":
+        backbone.eval()
+        return ()
+
+    if mode != "final_block":
+        raise ValueError(f"unknown backbone training mode: {mode}")
+
+    if not isinstance(backbone, DINOv2Backbone):
+        raise ValueError("final_block training is currently only supported for DINOv2 backbones")
+
+    trainable_prefixes: list[str] = []
+    blocks = getattr(backbone.model, "blocks", None)
+    if not blocks:
+        raise ValueError("DINOv2 model does not expose transformer blocks")
+
+    final_block_index = len(blocks) - 1
+    final_block = blocks[final_block_index]
+    for parameter in final_block.parameters():
+        parameter.requires_grad = True
+    trainable_prefixes.append(f"model.blocks.{final_block_index}")
+
+    if hasattr(backbone.model, "norm"):
+        for parameter in backbone.model.norm.parameters():
+            parameter.requires_grad = True
+        trainable_prefixes.append("model.norm")
+
+    backbone.train()
+    return tuple(trainable_prefixes)
+
+
+def trainable_state_dict(backbone: nn.Module) -> dict[str, torch.Tensor]:
+    """Return only trainable backbone parameters for compact checkpoints."""
+
+    trainable_names = {
+        name for name, parameter in backbone.named_parameters() if parameter.requires_grad
+    }
+    state = backbone.state_dict()
+    return {
+        name: tensor.detach().cpu()
+        for name, tensor in state.items()
+        if name in trainable_names
+    }
+
+
+def load_partial_backbone_state(backbone: nn.Module, state_dict: dict[str, torch.Tensor] | None) -> None:
+    if not state_dict:
+        return
+    backbone.load_state_dict(state_dict, strict=False)
+
+
 def image_transform_for_backbone(name: str) -> Callable[[Image.Image], torch.Tensor]:
     if name == "prototype":
         return pil_to_tensor

@@ -20,6 +20,7 @@ from data.taskshift_dataset import (
 )
 from models.backbone import build_backbone
 from models.backbone import image_transform_for_backbone
+from models.backbone import load_partial_backbone_state
 from models.heads import NavigationHead, PassiveHead
 from models.train_heads import choose_device
 
@@ -93,6 +94,7 @@ def extract_activations(
     )
 
     backbone = build_backbone(backbone_name).to(device)
+    load_partial_backbone_state(backbone, checkpoint.get("backbone_state_dict"))
     head = build_head(task, backbone.feature_dim, dataset, checkpoint).to(device)
     head.load_state_dict(checkpoint["head_state_dict"])
     head.eval()
