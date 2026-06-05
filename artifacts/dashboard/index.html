@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TaskShift Results</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #20242a;
+      --muted: #68707c;
+      --line: #d9dee6;
+      --accent: #2f6f73;
+      --accent-2: #8a5a44;
+      --warn: #a44a3f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      background: #ffffff;
+    }
+    .wrap {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 76px;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 0;
+      letter-spacing: 0;
+    }
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    main {
+      padding: 28px 0 40px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      min-height: 94px;
+    }
+    .metric-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .metric-value {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .metric-note {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 22px 0 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      appearance: none;
+      border: 1px solid var(--line);
+      border-bottom: 0;
+      border-radius: 8px 8px 0 0;
+      background: #eef1f4;
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      padding: 10px 14px;
+    }
+    .tab[aria-selected="true"] {
+      background: var(--panel);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .panel {
+      display: none;
+    }
+    .panel.active {
+      display: block;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 8px;
+      text-align: right;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child {
+      text-align: left;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #f9fafb;
+    }
+    tr:last-child td {
+      border-bottom: 0;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      background: #e8f1f0;
+      color: #245c60;
+      padding: 2px 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .caption {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      .metrics, .grid {
+        grid-template-columns: 1fr;
+      }
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        padding: 16px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <div>
+        <h1>TaskShift Results</h1>
+        <p class="subtitle">Prototype representation-shift analysis across passive and navigation heads.</p>
+      </div>
+      <span class="badge">Static Report</span>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="metrics" aria-label="Summary metrics">
+      
+      <article class="metric">
+        <span class="metric-label">Top Head Shift</span>
+        <span class="metric-value">3.654</span>
+        <span class="metric-note">container</span>
+      </article>
+    
+      
+      <article class="metric">
+        <span class="metric-label">Head Hidden CKA</span>
+        <span class="metric-value">0.594</span>
+        <span class="metric-note">passive vs navigation</span>
+      </article>
+    
+      
+      <article class="metric">
+        <span class="metric-label">Backbone CKA</span>
+        <span class="metric-value">1.000</span>
+        <span class="metric-note">frozen shared features</span>
+      </article>
+    
+      
+      <article class="metric">
+        <span class="metric-label">Compared Concepts</span>
+        <span class="metric-value">5</span>
+        <span class="metric-note">agent skipped if all-negative</span>
+      </article>
+    
+    </section>
+
+    <section class="section">
+      <h2>CKA Similarity</h2>
+      <img src="../plots/cka_heatmap.png" alt="CKA heatmap comparing passive and navigation activations">
+      <p class="caption">CKA compares the overall geometry of activation spaces. Higher values mean the same images are organized more similarly.</p>
+    </section>
+
+    <nav class="tabs" aria-label="Activation views">
+      <button class="tab" type="button" data-target="panel-backbone_features" aria-selected="true">Backbone Features</button>
+<button class="tab" type="button" data-target="panel-head_hidden" aria-selected="false">Head Hidden</button>
+    </nav>
+
+    
+    <section id="panel-backbone_features" class="panel active">
+      <div class="grid">
+        
+      <section class="section">
+        <h2>Concept Shift</h2>
+        <img src="../plots/backbone_features_concept_shift.png" alt="Backbone Features Concept Shift plot">
+      </section>
+    
+        
+      <section class="section">
+        <h2>Tuning Correlation</h2>
+        <img src="../plots/backbone_features_tuning_correlation.png" alt="Backbone Features Tuning Correlation plot">
+      </section>
+    
+      </div>
+      <section class="section">
+        <h2>Backbone Features Metrics</h2>
+        
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Shift</th>
+            <th>Correlation</th>
+            <th>Cosine</th>
+            <th>Norm Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td>path</td>
+          <td>0.000</td>
+          <td>1.000</td>
+          <td>1.000</td>
+          <td>0.000</td>
+        </tr>
+        
+
+        <tr>
+          <td>obstacle</td>
+          <td>0.000</td>
+          <td>1.000</td>
+          <td>1.000</td>
+          <td>0.000</td>
+        </tr>
+        
+
+        <tr>
+          <td>landmark</td>
+          <td>0.000</td>
+          <td>1.000</td>
+          <td>1.000</td>
+          <td>0.000</td>
+        </tr>
+        
+
+        <tr>
+          <td>goal_object</td>
+          <td>0.000</td>
+          <td>1.000</td>
+          <td>1.000</td>
+          <td>0.000</td>
+        </tr>
+        
+
+        <tr>
+          <td>container</td>
+          <td>0.000</td>
+          <td>1.000</td>
+          <td>1.000</td>
+          <td>0.000</td>
+        </tr>
+        
+        </tbody>
+      </table>
+    
+      </section>
+    </section>
+            
+
+    <section id="panel-head_hidden" class="panel">
+      <div class="grid">
+        
+      <section class="section">
+        <h2>Concept Shift</h2>
+        <img src="../plots/head_hidden_concept_shift.png" alt="Head Hidden Concept Shift plot">
+      </section>
+    
+        
+      <section class="section">
+        <h2>Tuning Correlation</h2>
+        <img src="../plots/head_hidden_tuning_correlation.png" alt="Head Hidden Tuning Correlation plot">
+      </section>
+    
+      </div>
+      <section class="section">
+        <h2>Head Hidden Metrics</h2>
+        
+      <table>
+        <thead>
+          <tr>
+            <th>Concept</th>
+            <th>Shift</th>
+            <th>Correlation</th>
+            <th>Cosine</th>
+            <th>Norm Delta</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+        <tr>
+          <td>container</td>
+          <td>3.654</td>
+          <td>-0.028</td>
+          <td>-0.027</td>
+          <td>-0.003</td>
+        </tr>
+        
+
+        <tr>
+          <td>landmark</td>
+          <td>3.318</td>
+          <td>-0.013</td>
+          <td>-0.012</td>
+          <td>0.699</td>
+        </tr>
+        
+
+        <tr>
+          <td>goal_object</td>
+          <td>2.064</td>
+          <td>0.039</td>
+          <td>0.039</td>
+          <td>-0.375</td>
+        </tr>
+        
+
+        <tr>
+          <td>path</td>
+          <td>0.851</td>
+          <td>0.140</td>
+          <td>0.116</td>
+          <td>-0.382</td>
+        </tr>
+        
+
+        <tr>
+          <td>obstacle</td>
+          <td>0.520</td>
+          <td>0.018</td>
+          <td>0.060</td>
+          <td>0.193</td>
+        </tr>
+        
+        </tbody>
+      </table>
+    
+      </section>
+    </section>
+            
+  </main>
+  <script>
+    const tabs = Array.from(document.querySelectorAll(".tab"));
+    const panels = Array.from(document.querySelectorAll(".panel"));
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.target;
+        tabs.forEach((item) => item.setAttribute("aria-selected", String(item === tab)));
+        panels.forEach((panel) => panel.classList.toggle("active", panel.id === target));
+      });
+    });
+  </script>
+</body>
+</html>

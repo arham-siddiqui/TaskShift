@@ -173,3 +173,45 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py
 ```
+
+## Plot results
+
+Generate static plots from the representation-shift summary:
+
+```bash
+python3 -m analysis.plots --summary artifacts/shift_metrics/representation_shift_summary.json --output-dir artifacts/plots
+```
+
+Outputs:
+
+- `artifacts/plots/backbone_features_concept_shift.png`
+- `artifacts/plots/backbone_features_tuning_correlation.png`
+- `artifacts/plots/head_hidden_concept_shift.png`
+- `artifacts/plots/head_hidden_tuning_correlation.png`
+- `artifacts/plots/cka_heatmap.png`
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py
+```
+
+## Build static dashboard
+
+Generate a local HTML dashboard from the shift summary and plot images:
+
+```bash
+python3 -m dashboard.build_static --summary artifacts/shift_metrics/representation_shift_summary.json --output artifacts/dashboard/index.html
+```
+
+Open:
+
+```text
+artifacts/dashboard/index.html
+```
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py tests/test_dashboard.py
+```
