@@ -5,20 +5,9 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 from pathlib import Path
 from typing import Any
-
-
-PLOT_FILES = {
-    "backbone_features": {
-        "Concept Shift": "../plots/backbone_features_concept_shift.png",
-        "Tuning Correlation": "../plots/backbone_features_tuning_correlation.png",
-    },
-    "head_hidden": {
-        "Concept Shift": "../plots/head_hidden_concept_shift.png",
-        "Tuning Correlation": "../plots/head_hidden_tuning_correlation.png",
-    },
-}
 
 
 def main() -> None:
@@ -28,21 +17,23 @@ def main() -> None:
         type=Path,
         default=Path("artifacts/shift_metrics/representation_shift_summary.json"),
     )
+    parser.add_argument("--plot-dir", type=Path, default=Path("artifacts/plots"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/dashboard/index.html"))
     args = parser.parse_args()
 
-    build_dashboard(args.summary, args.output)
+    build_dashboard(args.summary, args.output, args.plot_dir)
 
 
-def build_dashboard(summary_path: Path, output_path: Path) -> Path:
+def build_dashboard(summary_path: Path, output_path: Path, plot_dir: Path = Path("artifacts/plots")) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    output_path.write_text(render_dashboard(summary), encoding="utf-8")
+    plot_prefix = relative_prefix(output_path.parent, plot_dir)
+    output_path.write_text(render_dashboard(summary, plot_prefix), encoding="utf-8")
     print(f"saved dashboard: {output_path}")
     return output_path
 
 
-def render_dashboard(summary: dict[str, Any]) -> str:
+def render_dashboard(summary: dict[str, Any], plot_prefix: str) -> str:
     activation_names = list(summary["probe_shift"].keys())
     first_activation = activation_names[0] if activation_names else ""
     head_result = summary["probe_shift"].get("head_hidden", {})
@@ -267,7 +258,7 @@ def render_dashboard(summary: dict[str, Any]) -> str:
 
     <section class="section">
       <h2>CKA Similarity</h2>
-      <img src="../plots/cka_heatmap.png" alt="CKA heatmap comparing passive and navigation activations">
+      <img src="{html.escape(plot_prefix)}/cka_heatmap.png" alt="CKA heatmap comparing passive and navigation activations">
       <p class="caption">CKA compares the overall geometry of activation spaces. Higher values mean the same images are organized more similarly.</p>
     </section>
 
@@ -275,7 +266,7 @@ def render_dashboard(summary: dict[str, Any]) -> str:
       {render_tabs(activation_names, first_activation)}
     </nav>
 
-    {render_activation_panels(summary, activation_names, first_activation)}
+    {render_activation_panels(summary, activation_names, first_activation, plot_prefix)}
   </main>
   <script>
     const tabs = Array.from(document.querySelectorAll(".tab"));
@@ -314,6 +305,7 @@ def render_activation_panels(
     summary: dict[str, Any],
     activation_names: list[str],
     selected: str,
+    plot_prefix: str,
 ) -> str:
     panels = []
     for activation_name in activation_names:
@@ -323,8 +315,8 @@ def render_activation_panels(
             f"""
     <section id="panel-{html.escape(activation_name)}" class="panel{active}">
       <div class="grid">
-        {render_plot_card(activation_name, "Concept Shift")}
-        {render_plot_card(activation_name, "Tuning Correlation")}
+        {render_plot_card(activation_name, "Concept Shift", plot_prefix)}
+        {render_plot_card(activation_name, "Tuning Correlation", plot_prefix)}
       </div>
       <section class="section">
         <h2>{html.escape(format_activation_name(activation_name))} Metrics</h2>
@@ -336,14 +328,23 @@ def render_activation_panels(
     return "\n".join(panels)
 
 
-def render_plot_card(activation_name: str, title: str) -> str:
-    src = PLOT_FILES[activation_name][title]
+def render_plot_card(activation_name: str, title: str, plot_prefix: str) -> str:
+    src = plot_src(activation_name, title, plot_prefix)
     return f"""
       <section class="section">
         <h2>{html.escape(title)}</h2>
         <img src="{html.escape(src)}" alt="{html.escape(format_activation_name(activation_name))} {html.escape(title)} plot">
       </section>
     """
+
+
+def plot_src(activation_name: str, title: str, plot_prefix: str) -> str:
+    suffix = "concept_shift" if title == "Concept Shift" else "tuning_correlation"
+    return f"{plot_prefix}/{activation_name}_{suffix}.png"
+
+
+def relative_prefix(from_dir: Path, to_dir: Path) -> str:
+    return os.path.relpath(to_dir.resolve(), start=from_dir.resolve())
 
 
 def render_shift_table(rows: list[dict[str, Any]]) -> str:
@@ -397,4 +398,3 @@ def format_activation_name(name: str) -> str:
 
 if __name__ == "__main__":
     main()
-

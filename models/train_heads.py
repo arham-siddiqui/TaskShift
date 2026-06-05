@@ -19,6 +19,7 @@ from data.taskshift_dataset import (
     taskshift_collate,
 )
 from models.backbone import build_backbone
+from models.backbone import image_transform_for_backbone
 from models.heads import NavigationHead, PassiveHead
 
 
@@ -30,6 +31,11 @@ def main() -> None:
     parser.add_argument("--dataset", type=Path, default=Path("artifacts/prototype_dataset"))
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/checkpoints"))
     parser.add_argument("--task", choices=("passive", "navigation", "both"), default="both")
+    parser.add_argument(
+        "--backbone",
+        choices=("prototype", "dinov2_vits14", "dinov2_vitb14", "dinov2_vitl14", "dinov2_vitg14"),
+        default="prototype",
+    )
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -40,6 +46,7 @@ def main() -> None:
         dataset_dir=args.dataset,
         output_dir=args.output_dir,
         task=args.task,
+        backbone_name=args.backbone,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
@@ -51,6 +58,7 @@ def train_requested_heads(
     dataset_dir: Path,
     output_dir: Path,
     task: str = "both",
+    backbone_name: str = "prototype",
     epochs: int = 20,
     batch_size: int = 32,
     lr: float = 1e-3,
@@ -60,9 +68,12 @@ def train_requested_heads(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     device = choose_device()
-    dataset = TaskShiftDataset(dataset_dir)
+    dataset = TaskShiftDataset(
+        dataset_dir,
+        image_transform=image_transform_for_backbone(backbone_name),
+    )
     train_loader, val_loader = build_loaders(dataset, batch_size, seed)
-    backbone = build_backbone("prototype").to(device)
+    backbone = build_backbone(backbone_name).to(device)
 
     results: dict[str, dict[str, float]] = {}
     if task in ("passive", "both"):
@@ -74,6 +85,7 @@ def train_requested_heads(
             backbone,
             head,
             metrics,
+            backbone_name,
             dataset.vocab.navigation_actions,
         )
         results["passive"] = metrics
@@ -93,6 +105,7 @@ def train_requested_heads(
             backbone,
             head,
             metrics,
+            backbone_name,
             dataset.vocab.navigation_actions,
         )
         results["navigation"] = metrics
@@ -249,12 +262,14 @@ def save_checkpoint(
     backbone: nn.Module,
     head: nn.Module,
     metrics: dict[str, float],
+    backbone_name: str,
     navigation_actions: tuple[str, ...],
 ) -> None:
     checkpoint: dict[str, Any] = {
         "task": task,
         "backbone": {
             "name": getattr(getattr(backbone, "spec", None), "name", "unknown"),
+            "build_name": backbone_name,
             "feature_dim": getattr(backbone, "feature_dim", None),
         },
         "head_state_dict": head.state_dict(),

@@ -12,15 +12,15 @@ class DashboardTest(unittest.TestCase):
             build_dashboard(
                 Path("artifacts/shift_metrics/representation_shift_summary.json"),
                 output_path,
+                Path("artifacts/plots"),
             )
 
             html = output_path.read_text(encoding="utf-8")
             self.assertIn("TaskShift Results", html)
             self.assertIn("Head Hidden", html)
-            self.assertIn("../plots/cka_heatmap.png", html)
+            self.assertIn("cka_heatmap.png", html)
             self.assertGreater(output_path.stat().st_size, 1000)
 
 
 if __name__ == "__main__":
     unittest.main()
-

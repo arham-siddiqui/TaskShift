@@ -1,1 +1,5 @@
 taskshiftspec.txt
+__pycache__/
+*.pyc
+.external/
+artifacts/

@@ -19,6 +19,7 @@ from data.taskshift_dataset import (
     taskshift_collate,
 )
 from models.backbone import build_backbone
+from models.backbone import image_transform_for_backbone
 from models.heads import NavigationHead, PassiveHead
 from models.train_heads import choose_device
 
@@ -77,7 +78,13 @@ def extract_activations(
 ) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     device = choose_device()
-    dataset = TaskShiftDataset(dataset_dir)
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    task = checkpoint["task"]
+    backbone_name = resolve_backbone_name(checkpoint)
+    dataset = TaskShiftDataset(
+        dataset_dir,
+        image_transform=image_transform_for_backbone(backbone_name),
+    )
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -85,9 +92,7 @@ def extract_activations(
         collate_fn=taskshift_collate,
     )
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
-    task = checkpoint["task"]
-    backbone = build_backbone("prototype").to(device)
+    backbone = build_backbone(backbone_name).to(device)
     head = build_head(task, backbone.feature_dim, dataset, checkpoint).to(device)
     head.load_state_dict(checkpoint["head_state_dict"])
     head.eval()
@@ -117,6 +122,9 @@ def extract_activations(
                 outputs = head(features)
 
                 collected["backbone_features"].append(features.detach().cpu())
+                if hasattr(backbone, "intermediate_features"):
+                    for name, value in backbone.intermediate_features(images).items():
+                        collected.setdefault(name, []).append(value.detach().cpu())
                 collected["head_hidden"].append(recorder.activations["head_hidden"])
                 for name, value in outputs.items():
                     logits.setdefault(name, []).append(value.detach().cpu())
@@ -132,6 +140,7 @@ def extract_activations(
         "task": task,
         "checkpoint_path": str(checkpoint_path),
         "dataset_dir": str(dataset_dir),
+        "backbone": checkpoint.get("backbone", {}),
         "activations": stack_tensor_lists(collected),
         "logits": stack_tensor_lists(logits),
         "targets": stack_tensor_lists(targets),
@@ -171,6 +180,14 @@ def build_head(
             len(vocab.get("navigation_actions", dataset.vocab.navigation_actions)),
         )
     raise ValueError(f"unknown checkpoint task: {task}")
+
+
+def resolve_backbone_name(checkpoint: dict[str, Any]) -> str:
+    backbone = checkpoint.get("backbone", {})
+    name = backbone.get("build_name") or backbone.get("name", "prototype")
+    if name.startswith("frozen_prototype"):
+        return "prototype"
+    return name
 
 
 def stack_tensor_lists(values: dict[str, list[torch.Tensor]]) -> dict[str, torch.Tensor]:

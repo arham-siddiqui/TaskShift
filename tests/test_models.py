@@ -1,9 +1,11 @@
 import unittest
 
 import torch
+from PIL import Image
 
 from data.taskshift_dataset import NAVIGATION_BINARY_KEYS, OBJECT_VOCAB, ROOM_VOCAB
-from models.backbone import build_backbone
+from activations.extract import resolve_backbone_name
+from models.backbone import build_backbone, image_transform_for_backbone
 from models.heads import NavigationHead, PassiveHead
 
 
@@ -26,7 +28,19 @@ class ModelComponentTest(unittest.TestCase):
         )
         self.assertEqual(tuple(navigation_outputs["action_logits"].shape), (4, 4))
 
+    def test_dinov2_transform_shape_without_loading_model(self) -> None:
+        transform = image_transform_for_backbone("dinov2_vits14")
+        image = Image.new("RGB", (160, 120), color=(128, 128, 128))
+        tensor = transform(image)
+
+        self.assertEqual(tuple(tensor.shape), (3, 224, 224))
+        self.assertEqual(tensor.dtype, torch.float32)
+
+    def test_legacy_prototype_checkpoint_name_resolves(self) -> None:
+        checkpoint = {"backbone": {"name": "frozen_prototype_grid8"}}
+
+        self.assertEqual(resolve_backbone_name(checkpoint), "prototype")
+
 
 if __name__ == "__main__":
     unittest.main()
-

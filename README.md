@@ -90,6 +90,25 @@ Outputs:
 The passive head predicts visible objects and room type. The navigation head
 predicts door/path/obstacle/reachability labels and best action.
 
+Train with a real frozen DINOv2 backbone:
+
+```bash
+python3 -m models.train_heads --dataset artifacts/prototype_dataset --output-dir artifacts/checkpoints_dinov2 --backbone dinov2_vits14 --epochs 10 --batch-size 16
+```
+
+The first DINOv2 run downloads the official model through PyTorch Hub. Available
+backbone names are `prototype`, `dinov2_vits14`, `dinov2_vitb14`,
+`dinov2_vitl14`, and `dinov2_vitg14`.
+
+If Python certificate setup blocks PyTorch Hub downloads, clone DINOv2 and
+download the ViT-S/14 weight locally:
+
+```bash
+git clone --depth 1 https://github.com/facebookresearch/dinov2.git .external/dinov2
+mkdir -p .external/dinov2/weights
+curl -L https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_pretrain.pth -o .external/dinov2/weights/dinov2_vits14_pretrain.pth
+```
+
 Run all current tests:
 
 ```bash
@@ -105,6 +124,12 @@ the internal tensors needed by probes and representation-shift metrics.
 python3 -m activations.extract --dataset artifacts/prototype_dataset --checkpoint-dir artifacts/checkpoints
 ```
 
+DINOv2 checkpoint extraction:
+
+```bash
+python3 -m activations.extract --dataset artifacts/prototype_dataset --checkpoint-dir artifacts/checkpoints_dinov2 --output-dir artifacts/activations_dinov2 --batch-size 16
+```
+
 Outputs:
 
 - `artifacts/activations/passive_activations.pt`
@@ -114,6 +139,8 @@ Each activation artifact contains:
 
 - `activations["backbone_features"]`: frozen visual features
 - `activations["head_hidden"]`: hidden representation inside the task head
+- DINOv2 checkpoints also include selected transformer block activations such
+  as `block_0`, `block_3`, `block_6`, `block_9`, and `block_11`
 - `logits`: model outputs
 - `targets`: passive, navigation, and concept labels
 - `metadata`: original frame metadata
@@ -133,6 +160,12 @@ decodable from a saved activation.
 
 ```bash
 python3 -m analysis.linear_probes --activation-dir artifacts/activations --output-dir artifacts/probes
+```
+
+DINOv2 probes:
+
+```bash
+python3 -m analysis.linear_probes --activation-dir artifacts/activations_dinov2 --output-dir artifacts/probes_dinov2
 ```
 
 Outputs:
@@ -163,6 +196,12 @@ TaskShift metrics:
 python3 -m analysis.representation_shift --probe-dir artifacts/probes --activation-dir artifacts/activations --output-dir artifacts/shift_metrics
 ```
 
+DINOv2 representation shifts:
+
+```bash
+python3 -m analysis.representation_shift --probe-dir artifacts/probes_dinov2 --activation-dir artifacts/activations_dinov2 --output-dir artifacts/shift_metrics_dinov2
+```
+
 Outputs:
 
 - `artifacts/shift_metrics/representation_shift.pt`
@@ -180,6 +219,12 @@ Generate static plots from the representation-shift summary:
 
 ```bash
 python3 -m analysis.plots --summary artifacts/shift_metrics/representation_shift_summary.json --output-dir artifacts/plots
+```
+
+DINOv2 plots:
+
+```bash
+python3 -m analysis.plots --summary artifacts/shift_metrics_dinov2/representation_shift_summary.json --output-dir artifacts/plots_dinov2
 ```
 
 Outputs:
@@ -201,7 +246,13 @@ python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py
 Generate a local HTML dashboard from the shift summary and plot images:
 
 ```bash
-python3 -m dashboard.build_static --summary artifacts/shift_metrics/representation_shift_summary.json --output artifacts/dashboard/index.html
+python3 -m dashboard.build_static --summary artifacts/shift_metrics/representation_shift_summary.json --plot-dir artifacts/plots --output artifacts/dashboard/index.html
+```
+
+DINOv2 dashboard:
+
+```bash
+python3 -m dashboard.build_static --summary artifacts/shift_metrics_dinov2/representation_shift_summary.json --plot-dir artifacts/plots_dinov2 --output artifacts/dashboard_dinov2/index.html
 ```
 
 Open:
