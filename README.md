@@ -149,3 +149,27 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py
 ```
+
+## Compare representation shifts
+
+Representation comparison turns probe weights and activations into the first
+TaskShift metrics:
+
+- tuning-vector correlation between passive and navigation concept probes
+- concept shift magnitude for each shared concept
+- linear CKA similarity between passive and navigation activations
+
+```bash
+python3 -m analysis.representation_shift --probe-dir artifacts/probes --activation-dir artifacts/activations --output-dir artifacts/shift_metrics
+```
+
+Outputs:
+
+- `artifacts/shift_metrics/representation_shift.pt`
+- `artifacts/shift_metrics/representation_shift_summary.json`
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py
+```

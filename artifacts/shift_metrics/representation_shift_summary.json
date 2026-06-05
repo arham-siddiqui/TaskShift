@@ -1,0 +1,290 @@
+{
+  "probe_shift": {
+    "backbone_features": {
+      "concepts_compared": [
+        "path",
+        "obstacle",
+        "landmark",
+        "goal_object",
+        "container"
+      ],
+      "concept_shift": [
+        {
+          "concept": "path",
+          "cosine_similarity": 0.9999999999999998,
+          "tuning_correlation": 0.9999999999999997,
+          "shift_magnitude": 0.0,
+          "passive_norm": 0.12352372224174729,
+          "navigation_norm": 0.12352372224174729,
+          "navigation_minus_passive_norm": 0.0,
+          "passive_probe_metrics": {
+            "positive_examples": 209,
+            "negative_examples": 91,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 209,
+            "negative_examples": 91,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        },
+        {
+          "concept": "obstacle",
+          "cosine_similarity": 0.9999999999999991,
+          "tuning_correlation": 1.0,
+          "shift_magnitude": 0.0,
+          "passive_norm": 0.24266899584050347,
+          "navigation_norm": 0.24266899584050347,
+          "navigation_minus_passive_norm": 0.0,
+          "passive_probe_metrics": {
+            "positive_examples": 216,
+            "negative_examples": 84,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 216,
+            "negative_examples": 84,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        },
+        {
+          "concept": "landmark",
+          "cosine_similarity": 1.0000000000000002,
+          "tuning_correlation": 1.0,
+          "shift_magnitude": 0.0,
+          "passive_norm": 1.9109260954706282,
+          "navigation_norm": 1.9109260954706282,
+          "navigation_minus_passive_norm": 0.0,
+          "passive_probe_metrics": {
+            "positive_examples": 270,
+            "negative_examples": 30,
+            "accuracy": 0.84,
+            "balanced_accuracy": 0.8476890756302521,
+            "roc_auc": 0.9107142857142857
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 270,
+            "negative_examples": 30,
+            "accuracy": 0.84,
+            "balanced_accuracy": 0.8476890756302521,
+            "roc_auc": 0.9107142857142857
+          }
+        },
+        {
+          "concept": "goal_object",
+          "cosine_similarity": 0.9999999999999998,
+          "tuning_correlation": 0.9999999999999994,
+          "shift_magnitude": 0.0,
+          "passive_norm": 0.263765410816802,
+          "navigation_norm": 0.263765410816802,
+          "navigation_minus_passive_norm": 0.0,
+          "passive_probe_metrics": {
+            "positive_examples": 257,
+            "negative_examples": 43,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 257,
+            "negative_examples": 43,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        },
+        {
+          "concept": "container",
+          "cosine_similarity": 1.0000000000000004,
+          "tuning_correlation": 0.9999999999999997,
+          "shift_magnitude": 0.0,
+          "passive_norm": 2.289335699008226,
+          "navigation_norm": 2.289335699008226,
+          "navigation_minus_passive_norm": 0.0,
+          "passive_probe_metrics": {
+            "positive_examples": 253,
+            "negative_examples": 47,
+            "accuracy": 0.72,
+            "balanced_accuracy": 0.5634920634920635,
+            "roc_auc": 0.5456349206349206
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 253,
+            "negative_examples": 47,
+            "accuracy": 0.72,
+            "balanced_accuracy": 0.5634920634920635,
+            "roc_auc": 0.5456349206349206
+          }
+        }
+      ],
+      "mean_shift_magnitude": 0.0,
+      "mean_tuning_correlation": 0.9999999999999998
+    },
+    "head_hidden": {
+      "concepts_compared": [
+        "path",
+        "obstacle",
+        "landmark",
+        "goal_object",
+        "container"
+      ],
+      "concept_shift": [
+        {
+          "concept": "container",
+          "cosine_similarity": -0.026759782586476724,
+          "tuning_correlation": -0.02794029174969328,
+          "shift_magnitude": 3.653990567285007,
+          "passive_norm": 2.5514816199352652,
+          "navigation_norm": 2.548256944274071,
+          "navigation_minus_passive_norm": -0.0032246756611944427,
+          "passive_probe_metrics": {
+            "positive_examples": 253,
+            "negative_examples": 47,
+            "accuracy": 0.6933333333333334,
+            "balanced_accuracy": 0.5476190476190476,
+            "roc_auc": 0.5853174603174603
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 253,
+            "negative_examples": 47,
+            "accuracy": 0.6933333333333334,
+            "balanced_accuracy": 0.5476190476190476,
+            "roc_auc": 0.5403439153439153
+          }
+        },
+        {
+          "concept": "landmark",
+          "cosine_similarity": -0.011682374921450798,
+          "tuning_correlation": -0.01297882518788221,
+          "shift_magnitude": 3.318410235327769,
+          "passive_norm": 1.9575476547341735,
+          "navigation_norm": 2.6567536774164404,
+          "navigation_minus_passive_norm": 0.699206022682267,
+          "passive_probe_metrics": {
+            "positive_examples": 270,
+            "negative_examples": 30,
+            "accuracy": 0.84,
+            "balanced_accuracy": 0.8476890756302521,
+            "roc_auc": 0.8539915966386555
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 270,
+            "negative_examples": 30,
+            "accuracy": 0.84,
+            "balanced_accuracy": 0.7836134453781513,
+            "roc_auc": 0.9002100840336134
+          }
+        },
+        {
+          "concept": "goal_object",
+          "cosine_similarity": 0.03935765240701625,
+          "tuning_correlation": 0.03865529324088051,
+          "shift_magnitude": 2.064059459196714,
+          "passive_norm": 1.6637308144552951,
+          "navigation_norm": 1.2888484024661906,
+          "navigation_minus_passive_norm": -0.37488241198910455,
+          "passive_probe_metrics": {
+            "positive_examples": 257,
+            "negative_examples": 43,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 257,
+            "negative_examples": 43,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        },
+        {
+          "concept": "path",
+          "cosine_similarity": 0.11577817836942512,
+          "tuning_correlation": 0.13992586976850574,
+          "shift_magnitude": 0.8510534568703965,
+          "passive_norm": 0.7939705213094292,
+          "navigation_norm": 0.4118508649950225,
+          "navigation_minus_passive_norm": -0.38211965631440675,
+          "passive_probe_metrics": {
+            "positive_examples": 209,
+            "negative_examples": 91,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 209,
+            "negative_examples": 91,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        },
+        {
+          "concept": "obstacle",
+          "cosine_similarity": 0.0598651989650549,
+          "tuning_correlation": 0.018297269552108496,
+          "shift_magnitude": 0.5195643230093644,
+          "passive_norm": 0.2683888003835721,
+          "navigation_norm": 0.46123306277803455,
+          "navigation_minus_passive_norm": 0.19284426239446245,
+          "passive_probe_metrics": {
+            "positive_examples": 216,
+            "negative_examples": 84,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          },
+          "navigation_probe_metrics": {
+            "positive_examples": 216,
+            "negative_examples": 84,
+            "accuracy": 1.0,
+            "balanced_accuracy": 1.0,
+            "roc_auc": 1.0
+          }
+        }
+      ],
+      "mean_shift_magnitude": 2.08141560833785,
+      "mean_tuning_correlation": 0.031191863124783854
+    }
+  },
+  "cka": {
+    "activation_names": [
+      "backbone_features",
+      "head_hidden"
+    ],
+    "matrix": [
+      [
+        1.0,
+        0.9452147483825684
+      ],
+      [
+        0.563873291015625,
+        0.5944606065750122
+      ]
+    ],
+    "matched": {
+      "backbone_features": {
+        "matched_layer_cka": 1.0
+      },
+      "head_hidden": {
+        "matched_layer_cka": 0.5944606065750122
+      }
+    }
+  },
+  "source_paths": {
+    "passive_probes": "artifacts/probes/passive_concept_probes.pt",
+    "navigation_probes": "artifacts/probes/navigation_concept_probes.pt",
+    "passive_activations": "artifacts/activations/passive_activations.pt",
+    "navigation_activations": "artifacts/activations/navigation_activations.pt"
+  }
+}
