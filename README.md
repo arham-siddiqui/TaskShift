@@ -266,3 +266,44 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py tests/test_dashboard.py
 ```
+
+## Run experiment sweeps
+
+Once the single-run pipeline works, the next step is checking whether the
+representation-shift results are repeatable across seeds and model conditions.
+The sweep runner executes the full pipeline for each requested run:
+
+1. generate a dataset
+2. train passive and navigation heads
+3. extract activations
+4. train concept probes
+5. compare representations
+6. generate plots and a per-run dashboard
+7. build a cross-run comparison dashboard
+
+Lightweight prototype sweep:
+
+```bash
+python3 -m experiments.run_sweep --experiment prototype_seed_sweep --backbones prototype --train-backbone-modes none --seeds 17 23 31 --frames 300 --epochs 5
+```
+
+DINOv2 frozen vs final-block tuning sweep:
+
+```bash
+python3 -m experiments.run_sweep --experiment dinov2_tuning_sweep --backbones dinov2_vits14 --train-backbone-modes none final_block --seeds 17 23 31 --frames 300 --epochs 3 --batch-size 8
+```
+
+Outputs are grouped under:
+
+- `artifacts/experiments/<experiment>/runs/<run_id>/`
+- `artifacts/experiments/<experiment>/comparison/comparison_summary.json`
+- `artifacts/experiments/<experiment>/comparison/index.html`
+
+Each run also writes `run_manifest.json`, which records the seed, backbone,
+backbone tuning mode, and artifact paths used to produce the result.
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py tests/test_dashboard.py tests/test_experiments.py
+```
