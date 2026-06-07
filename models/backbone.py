@@ -134,6 +134,9 @@ def build_backbone(name: str = "prototype") -> nn.Module:
     return backbone
 
 
+BACKBONE_TRAINING_MODES = ("none", "final_block", "last_2_blocks", "last_4_blocks", "all")
+
+
 def configure_backbone_training(backbone: nn.Module, mode: str) -> tuple[str, ...]:
     """Configure which backbone parameters are trainable."""
 
@@ -144,22 +147,30 @@ def configure_backbone_training(backbone: nn.Module, mode: str) -> tuple[str, ..
         backbone.eval()
         return ()
 
-    if mode != "final_block":
+    if mode not in BACKBONE_TRAINING_MODES:
         raise ValueError(f"unknown backbone training mode: {mode}")
 
     if not isinstance(backbone, DINOv2Backbone):
-        raise ValueError("final_block training is currently only supported for DINOv2 backbones")
+        raise ValueError(f"{mode} training is currently only supported for DINOv2 backbones")
 
     trainable_prefixes: list[str] = []
     blocks = getattr(backbone.model, "blocks", None)
     if not blocks:
         raise ValueError("DINOv2 model does not expose transformer blocks")
 
-    final_block_index = len(blocks) - 1
-    final_block = blocks[final_block_index]
-    for parameter in final_block.parameters():
-        parameter.requires_grad = True
-    trainable_prefixes.append(f"model.blocks.{final_block_index}")
+    if mode == "final_block":
+        first_trainable_block = len(blocks) - 1
+    elif mode == "last_2_blocks":
+        first_trainable_block = max(0, len(blocks) - 2)
+    elif mode == "last_4_blocks":
+        first_trainable_block = max(0, len(blocks) - 4)
+    else:
+        first_trainable_block = 0
+
+    for block_index in range(first_trainable_block, len(blocks)):
+        for parameter in blocks[block_index].parameters():
+            parameter.requires_grad = True
+        trainable_prefixes.append(f"model.blocks.{block_index}")
 
     if hasattr(backbone.model, "norm"):
         for parameter in backbone.model.norm.parameters():

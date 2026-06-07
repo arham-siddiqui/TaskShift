@@ -287,11 +287,15 @@ Lightweight prototype sweep:
 python3 -m experiments.run_sweep --experiment prototype_seed_sweep --backbones prototype --train-backbone-modes none --seeds 17 23 31 --frames 300 --epochs 5
 ```
 
-DINOv2 frozen vs final-block tuning sweep:
+DINOv2 backbone-tuning ladder:
 
 ```bash
-python3 -m experiments.run_sweep --experiment dinov2_tuning_sweep --backbones dinov2_vits14 --train-backbone-modes none final_block --seeds 17 23 31 --frames 300 --epochs 3 --batch-size 8
+python3 -m experiments.run_sweep --experiment dinov2_depth_sweep --backbones dinov2_vits14 --train-backbone-modes none final_block last_2_blocks last_4_blocks --seeds 17 23 31 --frames 300 --epochs 3 --batch-size 8
 ```
+
+Available backbone tuning modes are `none`, `final_block`, `last_2_blocks`,
+`last_4_blocks`, and `all`. The `all` mode is useful as a stress test, but it
+is much slower and easier to overfit on the prototype dataset.
 
 Outputs are grouped under:
 

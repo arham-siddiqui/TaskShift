@@ -15,6 +15,7 @@ from analysis.representation_shift import compare_representations
 from dashboard.build_static import build_dashboard
 from data.build_prototype_dataset import build_dataset
 from experiments.summarize_runs import build_comparison_report
+from models.backbone import BACKBONE_TRAINING_MODES
 from models.train_heads import train_requested_heads
 
 
@@ -49,7 +50,7 @@ def main() -> None:
     parser.add_argument(
         "--train-backbone-modes",
         nargs="+",
-        choices=("none", "final_block"),
+        choices=BACKBONE_TRAINING_MODES,
         default=["none"],
     )
     parser.add_argument("--frames", type=int, default=300)
@@ -191,8 +192,8 @@ def write_manifest(config: RunConfig, paths: dict[str, Path]) -> Path:
 
 
 def validate_config(config: RunConfig) -> None:
-    if config.train_backbone == "final_block" and not config.backbone.startswith("dinov2_"):
-        raise ValueError("final_block training requires a DINOv2 backbone")
+    if config.train_backbone != "none" and not config.backbone.startswith("dinov2_"):
+        raise ValueError(f"{config.train_backbone} training requires a DINOv2 backbone")
     if config.frames <= 0:
         raise ValueError("frames must be greater than 0")
     if config.epochs <= 0:

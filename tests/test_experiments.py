@@ -40,12 +40,12 @@ class ExperimentSummaryTest(unittest.TestCase):
             self.assertIn("prototype:none", html)
             self.assertIn("dashboard", html)
 
-    def test_final_block_requires_dinov2(self) -> None:
+    def test_trainable_backbone_modes_require_dinov2(self) -> None:
         config = RunConfig(
             experiment="test",
             seed=1,
             backbone="prototype",
-            train_backbone="final_block",
+            train_backbone="last_2_blocks",
             frames=12,
             epochs=1,
             batch_size=4,

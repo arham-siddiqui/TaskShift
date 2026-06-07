@@ -18,6 +18,7 @@ from data.taskshift_dataset import (
     TaskShiftDataset,
     taskshift_collate,
 )
+from models.backbone import BACKBONE_TRAINING_MODES
 from models.backbone import build_backbone
 from models.backbone import configure_backbone_training
 from models.backbone import image_transform_for_backbone
@@ -42,7 +43,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--backbone-lr", type=float, default=1e-5)
-    parser.add_argument("--train-backbone", choices=("none", "final_block"), default="none")
+    parser.add_argument("--train-backbone", choices=BACKBONE_TRAINING_MODES, default="none")
     parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args()
 
