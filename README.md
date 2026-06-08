@@ -30,6 +30,39 @@ This synthetic dataset is a contract test for the pipeline. The next version
 can replace the frame generator with AI2-THOR or ProcTHOR while preserving the
 same metadata shape.
 
+## AI2-THOR dataset builder
+
+After the synthetic prototype pipeline is working, generate embodied RGB frames
+from AI2-THOR while preserving the same TaskShift metadata contract:
+
+```bash
+python3 -m data.build_thor_dataset --frames 600 --output artifacts/thor_dataset --overwrite
+```
+
+Small smoke test:
+
+```bash
+python3 -m data.build_thor_dataset --frames 24 --scenes FloorPlan1 --output artifacts/thor_smoke_dataset --width 160 --height 120 --overwrite
+python3 -m data.dataset_inspector artifacts/thor_smoke_dataset
+```
+
+The first AI2-THOR run downloads a Unity build into `~/.ai2thor`, which can take
+several minutes. The generated dataset has the same files as the prototype:
+
+- `frames/`: egocentric AI2-THOR RGB frames
+- `metadata.jsonl`: scene, agent pose, visible objects, navigation labels, and concept labels
+- `taxonomy.yaml`: copied TaskShift concept taxonomy
+
+The current THOR labels are first-pass heuristics:
+
+- passive labels come from visible AI2-THOR object types and room type
+- navigation labels use visible doors, obstacles, nearby obstacles, and goal objects
+- concept labels map visible simulator objects into `path`, `obstacle`, `landmark`, `goal_object`, and `container`
+
+Once a THOR dataset is generated, the downstream commands are unchanged. Point
+`TaskShiftDataset`, `models.train_heads`, `activations.extract`, probes, plots,
+dashboards, or experiment sweeps at the THOR dataset directory.
+
 ## PyTorch dataset loader
 
 The `TaskShiftDataset` loader exposes one sample with all labels needed by the

@@ -1,7 +1,8 @@
 torch
 Pillow
-numpy
+numpy<2
 scikit-learn
 matplotlib
 seaborn
-
+ai2thor
+opencv-python<4.12
