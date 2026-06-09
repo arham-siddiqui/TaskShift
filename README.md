@@ -53,10 +53,17 @@ several minutes. The generated dataset has the same files as the prototype:
 - `metadata.jsonl`: scene, agent pose, visible objects, navigation labels, and concept labels
 - `taxonomy.yaml`: copied TaskShift concept taxonomy
 
-The current THOR labels are first-pass heuristics:
+The current THOR labels combine visible-object metadata with lightweight
+simulator action probes:
 
 - passive labels come from visible AI2-THOR object types and room type
-- navigation labels use visible doors, obstacles, nearby obstacles, and goal objects
+- `path_blocked` uses nearby obstacle metadata plus whether `MoveAhead`
+  actually succeeds from the sampled pose
+- `best_action` uses `Stop` for reachable visible goal objects, `MoveAhead`
+  for clear forward motion, and otherwise chooses the better left/right turn
+  by probing side views from the same position
+- `reachable_goal_visible` requires a visible goal object that is interactable
+  and within the visibility distance
 - concept labels map visible simulator objects into `path`, `obstacle`, `landmark`, `goal_object`, and `container`
 
 Once a THOR dataset is generated, the downstream commands are unchanged. Point

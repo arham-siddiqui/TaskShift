@@ -6,9 +6,8 @@ This generator preserves the same on-disk contract as the synthetic prototype:
 - metadata.jsonl
 - taxonomy.yaml
 
-The labels are intentionally simple heuristics for the first real-data pass.
-They give the rest of the TaskShift pipeline embodied RGB frames and simulator
-metadata without changing the dataset loader, training code, probes, or plots.
+The labels use lightweight simulator probes for navigation affordances while
+preserving the same metadata shape as the synthetic prototype.
 """
 
 from __future__ import annotations
@@ -213,7 +212,15 @@ def sample_scene(
             continue
 
         visible_objects = visible_object_types(event)
-        navigation_labels = derive_navigation_labels(visible_objects, event.metadata.get("objects", []))
+        object_metadata = event.metadata.get("objects", [])
+        action_context = probe_navigation_context(
+            controller=controller,
+            position=position,
+            rotation=rotation,
+            horizon=horizon,
+            standing=True,
+        )
+        navigation_labels = derive_navigation_labels(visible_objects, object_metadata, action_context)
         concept_labels = derive_concept_labels(visible_objects, navigation_labels)
         image_name = f"scene_{scene.lower()}_frame_{index:05d}.png"
         save_frame(event.frame, frames_dir / image_name)
@@ -253,11 +260,17 @@ def visible_object_types(event: Any) -> list[str]:
 def derive_navigation_labels(
     visible_objects: list[str],
     object_metadata: list[dict[str, Any]],
+    action_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    action_context = action_context or {}
     visible_set = set(visible_objects)
     door_visible = bool(visible_set & DOOR_TYPES)
     obstacle_visible = bool(visible_set & OBSTACLE_TYPES)
-    reachable_goal_visible = bool(visible_set & GOAL_TYPES)
+    reachable_goal_visible = any(
+        is_reachable_goal_object(obj)
+        for obj in object_metadata
+        if obj.get("visible") and obj.get("objectType") in GOAL_TYPES
+    )
     nearby_obstacles = [
         obj
         for obj in object_metadata
@@ -266,14 +279,19 @@ def derive_navigation_labels(
         and distance_from_agent(obj) is not None
         and distance_from_agent(obj) <= 1.25
     ]
+    move_ahead_success = action_context.get("move_ahead_success")
     path_blocked = bool(nearby_obstacles)
+    if isinstance(move_ahead_success, bool):
+        path_blocked = path_blocked or not move_ahead_success
 
-    if path_blocked:
-        best_action = "RotateLeft"
-    elif reachable_goal_visible:
+    if reachable_goal_visible:
         best_action = "Stop"
-    else:
+    elif not path_blocked:
         best_action = "MoveAhead"
+    elif action_context:
+        best_action = best_rotation_action(action_context)
+    else:
+        best_action = "RotateLeft"
 
     return {
         "door_visible": door_visible,
@@ -282,6 +300,102 @@ def derive_navigation_labels(
         "best_action": best_action,
         "reachable_goal_visible": reachable_goal_visible,
     }
+
+
+def probe_navigation_context(
+    controller: Any,
+    position: dict[str, float],
+    rotation: int,
+    horizon: int,
+    standing: bool,
+) -> dict[str, Any]:
+    """Probe local action affordances, then restore the original pose."""
+
+    move_ahead_event = controller.step(action="MoveAhead")
+    move_ahead_success = bool(move_ahead_event.metadata.get("lastActionSuccess", False))
+    restore_pose(controller, position, rotation, horizon, standing)
+
+    side_views = {
+        "RotateLeft": probe_side_view(controller, position, rotation - 90, horizon, standing),
+        "RotateRight": probe_side_view(controller, position, rotation + 90, horizon, standing),
+    }
+    restore_pose(controller, position, rotation, horizon, standing)
+    return {
+        "move_ahead_success": move_ahead_success,
+        "side_views": side_views,
+    }
+
+
+def probe_side_view(
+    controller: Any,
+    position: dict[str, float],
+    rotation: int,
+    horizon: int,
+    standing: bool,
+) -> dict[str, Any]:
+    event = restore_pose(controller, position, rotation, horizon, standing)
+    visible_objects = visible_object_types(event)
+    object_metadata = event.metadata.get("objects", [])
+    move_event = controller.step(action="MoveAhead")
+    move_ahead_success = bool(move_event.metadata.get("lastActionSuccess", False))
+    restore_pose(controller, position, rotation, horizon, standing)
+    return {
+        "move_ahead_success": move_ahead_success,
+        "goal_count": sum(
+            1
+            for obj in object_metadata
+            if obj.get("visible") and obj.get("objectType") in GOAL_TYPES and is_reachable_goal_object(obj)
+        ),
+        "door_visible": bool(set(visible_objects) & DOOR_TYPES),
+        "obstacle_count": sum(
+            1 for obj in object_metadata if obj.get("visible") and obj.get("objectType") in OBSTACLE_TYPES
+        ),
+    }
+
+
+def restore_pose(
+    controller: Any,
+    position: dict[str, float],
+    rotation: int,
+    horizon: int,
+    standing: bool,
+) -> Any:
+    return controller.step(
+        action="TeleportFull",
+        x=position["x"],
+        y=position["y"],
+        z=position["z"],
+        rotation={"x": 0, "y": normalize_rotation(rotation), "z": 0},
+        horizon=horizon,
+        standing=standing,
+    )
+
+
+def best_rotation_action(action_context: dict[str, Any]) -> str:
+    side_views = action_context.get("side_views") or {}
+    if not isinstance(side_views, dict):
+        return "RotateLeft"
+
+    def score(action: str) -> tuple[int, int, int]:
+        view = side_views.get(action) or {}
+        return (
+            int(view.get("goal_count", 0)),
+            int(bool(view.get("move_ahead_success", False))),
+            int(bool(view.get("door_visible", False))) - int(view.get("obstacle_count", 0)),
+        )
+
+    left_score = score("RotateLeft")
+    right_score = score("RotateRight")
+    return "RotateRight" if right_score > left_score else "RotateLeft"
+
+
+def is_reachable_goal_object(obj: dict[str, Any]) -> bool:
+    distance = distance_from_agent(obj)
+    return (
+        bool(obj.get("pickupable") or obj.get("receptacle") or obj.get("openable"))
+        and distance is not None
+        and distance <= 1.5
+    )
 
 
 def derive_concept_labels(
@@ -304,6 +418,10 @@ def distance_from_agent(obj: dict[str, Any]) -> float | None:
     if isinstance(distance, (int, float)):
         return float(distance)
     return None
+
+
+def normalize_rotation(rotation: int) -> int:
+    return int(rotation) % 360
 
 
 def save_frame(frame: Any, path: Path) -> None:
