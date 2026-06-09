@@ -320,6 +320,12 @@ Lightweight prototype sweep:
 python3 -m experiments.run_sweep --experiment prototype_seed_sweep --backbones prototype --train-backbone-modes none --seeds 17 23 31 --frames 300 --epochs 5
 ```
 
+AI2-THOR frozen vs final-block DINOv2 sweep:
+
+```bash
+python3 -m experiments.run_sweep --experiment thor_dinov2_seed_sweep --dataset-kind thor --backbones dinov2_vits14 --train-backbone-modes none final_block --seeds 17 23 31 --frames 600 --epochs 3 --batch-size 8
+```
+
 DINOv2 backbone-tuning ladder:
 
 ```bash

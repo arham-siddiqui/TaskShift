@@ -43,6 +43,7 @@ class ExperimentSummaryTest(unittest.TestCase):
     def test_trainable_backbone_modes_require_dinov2(self) -> None:
         config = RunConfig(
             experiment="test",
+            dataset_kind="prototype",
             seed=1,
             backbone="prototype",
             train_backbone="last_2_blocks",
@@ -55,6 +56,22 @@ class ExperimentSummaryTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             validate_config(config)
+
+    def test_thor_run_id_is_namespaced(self) -> None:
+        config = RunConfig(
+            experiment="test",
+            dataset_kind="thor",
+            seed=7,
+            backbone="dinov2_vits14",
+            train_backbone="none",
+            frames=12,
+            epochs=1,
+            batch_size=4,
+            lr=1e-3,
+            backbone_lr=1e-5,
+        )
+
+        self.assertEqual(config.run_id, "thor_dinov2_vits14_none_seed7")
 
 
 def write_fake_run(root: Path, run_id: str, seed: int, head_cka: float, head_shift: float) -> Path:

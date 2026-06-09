@@ -13,7 +13,9 @@ from analysis.linear_probes import train_requested_probes
 from analysis.plots import plot_shift_summary
 from analysis.representation_shift import compare_representations
 from dashboard.build_static import build_dashboard
-from data.build_prototype_dataset import build_dataset
+from data.build_prototype_dataset import build_dataset as build_prototype_dataset
+from data.build_thor_dataset import build_dataset as build_thor_dataset
+from data.build_thor_dataset import DEFAULT_SCENES as DEFAULT_THOR_SCENES
 from experiments.summarize_runs import build_comparison_report
 from models.backbone import BACKBONE_TRAINING_MODES
 from models.train_heads import train_requested_heads
@@ -22,6 +24,7 @@ from models.train_heads import train_requested_heads
 @dataclass(frozen=True)
 class RunConfig:
     experiment: str
+    dataset_kind: str
     seed: int
     backbone: str
     train_backbone: str
@@ -30,15 +33,19 @@ class RunConfig:
     batch_size: int
     lr: float
     backbone_lr: float
+    thor_scenes: tuple[str, ...] = DEFAULT_THOR_SCENES
 
     @property
     def run_id(self) -> str:
+        if self.dataset_kind == "thor":
+            return f"thor_{self.backbone}_{self.train_backbone}_seed{self.seed}"
         return f"{self.backbone}_{self.train_backbone}_seed{self.seed}"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a TaskShift experiment sweep.")
     parser.add_argument("--experiment", default="prototype_seed_sweep")
+    parser.add_argument("--dataset-kind", choices=("prototype", "thor"), default="prototype")
     parser.add_argument("--output-root", type=Path, default=Path("artifacts/experiments"))
     parser.add_argument("--seeds", type=int, nargs="+", default=[17, 23, 31])
     parser.add_argument(
@@ -58,6 +65,7 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--backbone-lr", type=float, default=1e-5)
+    parser.add_argument("--thor-scenes", nargs="+", default=list(DEFAULT_THOR_SCENES))
     parser.add_argument(
         "--skip-existing",
         action="store_true",
@@ -68,6 +76,7 @@ def main() -> None:
     configs = [
         RunConfig(
             experiment=args.experiment,
+            dataset_kind=args.dataset_kind,
             seed=seed,
             backbone=backbone,
             train_backbone=mode,
@@ -76,6 +85,7 @@ def main() -> None:
             batch_size=args.batch_size,
             lr=args.lr,
             backbone_lr=args.backbone_lr,
+            thor_scenes=tuple(args.thor_scenes),
         )
         for seed in args.seeds
         for backbone in args.backbones
@@ -117,12 +127,7 @@ def run_sweep(
 
 def run_single_experiment(config: RunConfig, paths: dict[str, Path]) -> None:
     print(f"\n=== {config.run_id} ===")
-    build_dataset(
-        output_dir=paths["dataset"],
-        frame_count=config.frames,
-        seed=config.seed,
-        overwrite=True,
-    )
+    build_run_dataset(config, paths["dataset"])
     train_requested_heads(
         dataset_dir=paths["dataset"],
         output_dir=paths["checkpoints"],
@@ -165,6 +170,29 @@ def run_single_experiment(config: RunConfig, paths: dict[str, Path]) -> None:
     write_manifest(config, paths)
 
 
+def build_run_dataset(config: RunConfig, output_dir: Path) -> None:
+    if config.dataset_kind == "prototype":
+        build_prototype_dataset(
+            output_dir=output_dir,
+            frame_count=config.frames,
+            seed=config.seed,
+            overwrite=True,
+        )
+        return
+
+    if config.dataset_kind == "thor":
+        build_thor_dataset(
+            output_dir=output_dir,
+            frame_count=config.frames,
+            scenes=config.thor_scenes,
+            seed=config.seed,
+            overwrite=True,
+        )
+        return
+
+    raise ValueError(f"unknown dataset kind: {config.dataset_kind}")
+
+
 def paths_for_run(experiment_dir: Path, config: RunConfig) -> dict[str, Path]:
     run_dir = experiment_dir / "runs" / config.run_id
     return {
@@ -192,8 +220,12 @@ def write_manifest(config: RunConfig, paths: dict[str, Path]) -> Path:
 
 
 def validate_config(config: RunConfig) -> None:
+    if config.dataset_kind not in {"prototype", "thor"}:
+        raise ValueError(f"unknown dataset kind: {config.dataset_kind}")
     if config.train_backbone != "none" and not config.backbone.startswith("dinov2_"):
         raise ValueError(f"{config.train_backbone} training requires a DINOv2 backbone")
+    if config.dataset_kind == "thor" and not config.thor_scenes:
+        raise ValueError("THOR sweeps require at least one scene")
     if config.frames <= 0:
         raise ValueError("frames must be greater than 0")
     if config.epochs <= 0:
