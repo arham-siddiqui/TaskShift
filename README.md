@@ -350,3 +350,34 @@ Run all current tests:
 ```bash
 python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py tests/test_dashboard.py tests/test_experiments.py
 ```
+
+## Statistical validation
+
+After a multi-seed sweep, add uncertainty estimates and a paired permutation
+test to the cross-run comparison. The stats script compares matched seeds across
+two conditions, bootstraps confidence intervals over seed-level differences,
+and runs an exact paired sign-flip permutation test.
+
+THOR frozen vs final-block validation:
+
+```bash
+python3 -m analysis.stats --comparison artifacts/experiments/thor_dinov2_seed_sweep/comparison/comparison_summary.json --baseline-condition dinov2_vits14:none --treatment-condition dinov2_vits14:final_block --output-dir artifacts/experiments/thor_dinov2_seed_sweep/stats
+```
+
+Outputs:
+
+- `artifacts/experiments/<experiment>/stats/stats_summary.json`
+- `artifacts/experiments/<experiment>/stats/index.html`
+- `artifacts/experiments/<experiment>/stats/plots/metric_effects.png`
+- `artifacts/experiments/<experiment>/stats/plots/concept_effects.png`
+
+The reported mean difference is always `treatment - baseline`. For the THOR
+example, negative CKA differences mean the final-block condition became less
+similar between passive and navigation models; positive concept-shift
+differences mean the final-block condition produced larger concept shifts.
+
+Run all current tests:
+
+```bash
+python3 -m unittest tests/test_dataset_schema.py tests/test_taskshift_dataset.py tests/test_models.py tests/test_activation_extraction.py tests/test_linear_probes.py tests/test_representation_shift.py tests/test_plots.py tests/test_dashboard.py tests/test_experiments.py tests/test_stats.py
+```
